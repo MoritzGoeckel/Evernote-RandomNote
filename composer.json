@@ -1,0 +1,5 @@
+{
+    "require": {
+        "evernote/evernote-cloud-sdk-php": "dev-master"
+    }
+}
