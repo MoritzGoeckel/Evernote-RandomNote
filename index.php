@@ -55,7 +55,7 @@ else {
     $noteStore = $client->getUserNotestore();
     
     $filter->notebookGuid = $_GET['notebook'];
-    $notes = $noteStore->findNotes($token, $filter, 0, 100);
+    $notes = $noteStore->findNotes($token, $filter, 0, 500);
     
     $note_output = array();
     foreach ($notes->notes as $note) {

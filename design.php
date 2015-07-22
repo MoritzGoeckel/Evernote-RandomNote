@@ -16,8 +16,14 @@
     <div class="main_wrap">
         <div class="content_wrap">
             <?php 
-                if(isset($content))
+                if(isset($content) && $content != "")
+                {
                     echo $content;
+                    ?>
+                    <br />
+                    <span>This app will show you random notes of your choosen notebook. This may help your inspiration or will surprise you with some of your long forgotten notes. Click on one of your notebooks and just try it!</span>
+                    <?php
+                }
             ?>
             
             <?php if(isset($note_output))
