@@ -1,50 +1,73 @@
 <?php
-require __DIR__ . '/evernote_api/autoload.php';
-/**
- * Authorization Tokens are created by either:
- * [1] OAuth workflow: https://dev.evernote.com/doc/articles/authentication.php
- * or by creating a 
- * [2] Developer Token: https://dev.evernote.com/doc/articles/authentication.php#devtoken
- */
-$token = '%TOKEN%';
-/** Understanding SANDBOX vs PRODUCTION Environments
- *
- * The Evernote API 'Sandbox' environment -> SANDBOX.EVERNOTE.COM 
- *    - Create a sample Evernote account at https://sandbox.evernote.com
- * 
- * The Evernote API 'Production' Environment -> WWW.EVERNOTE.COM
- *    - Activate your Sandboxed API key for production access at https://dev.evernote.com/support/
- * 
- * For testing, set $sandbox to true, for production, set $sandbox to false
- * 
- */
+
+$content = "";
+
+error_reporting(E_ALL);
+require 'vendor/autoload.php';
+
 $sandbox = true;
-$client = new \Evernote\Client($token, $sandbox);
-/**
- * The search string
- */
-$search = new \Evernote\Model\Search('test');
-/**
- * The notebook to search in
- */
-$notebook = null;
-/**
- * The scope of the search
- */
-$scope = \Evernote\Client::SEARCH_SCOPE_BUSINESS;
-/**
- * The order of the sort
- */
-$order = \Evernote\Client::SORT_ORDER_REVERSE | \Evernote\Client::SORT_ORDER_RECENTLY_CREATED;
-/**
- * The number of results
- */
-$maxResult = 5;
-$results = $client->findNotesWithSearch($search, $notebook, $scope, $order, $maxResult);
-foreach ($results as $result) {
-    $noteGuid    = $result->guid;
-    $noteType    = $result->type;
-    $noteTitle   = $result->title;
-    $noteCreated = $result->created;
-    $noteUpdated = $result->updated;
+
+$oauth_handler = new \Evernote\Auth\OauthHandler($sandbox);
+
+$key      = 'moritzg199';
+$secret   = 'c1c34531acc73c2f';
+$callback = 'http://umkkd9317f21.moritzgoeckel.koding.io/RandomNote/';
+
+if(isset($_COOKIE["token"]) == false)
+{
+    try {
+        $oauth_data = $oauth_handler->authorize($key, $secret, $callback);
+        $token = $oauth_data['oauth_token'];
+        setcookie("token", $token, time() + (3600 * 24 * 100));
+        
+        //header("http://umkkd9317f21.moritzgoeckel.koding.io/RandomNote/oauth.php");
+    } 
+    catch (Evernote\Exception\AuthorizationDeniedException $e) 
+    {
+        //If the user decline the authorization, an exception is thrown.
+        $content .=  "Permission denied!";
+        print_r($e);
+    }
 }
+else {
+    $token = $_COOKIE["token"];
+}
+
+//$content .= "Token: " . $token . "<p />";
+
+$client = new \Evernote\Client($token);
+//$advancedClient = $client->getAdvancedClient();
+
+if(isset($_GET['notebook']) == false)
+{
+    $content .= "<h2>Choose a notebook</h1>";
+    $notebooks = array();
+    $notebooks = $client->listNotebooks();
+    foreach ($notebooks as $notebook) {
+        $content .= "<a href='?notebook=" . $notebook->guid . "'>" . $notebook->name . " (Guid: " . $notebook->guid . ")</a><br />";
+    }
+}
+else {
+    $book = $client->getNotebook($_GET['notebook']);
+    
+    $filter = new \EDAM\NoteStore\NoteFilter();
+    $noteStore = $client->getUserNotestore();
+    
+    $filter->notebookGuid = $_GET['notebook'];
+    $notes = $noteStore->findNotes($token, $filter, 0, 100);
+    
+    foreach ($notes->notes as $note) { 
+        $content .=  $note->title . "<br />"; 
+    }
+}
+
+/*$note = $client->getNote('the-note-guid');
+$noteGuid    = $note->guid;
+$noteType    = $note->type;
+$noteTitle   = $note->title;
+$noteCreated = $note->created;
+$noteUpdated = $note->updated;*/
+
+//Auth, Select Notebook / All, Show Random -> Next, Set Interval
+    
+include("design.php");
