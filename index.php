@@ -44,7 +44,8 @@ if(isset($_GET['notebook']) == false)
     $notebooks = array();
     $notebooks = $client->listNotebooks();
     foreach ($notebooks as $notebook) {
-        $content .= "<a href='?notebook=" . $notebook->guid . "'>" . $notebook->name . " (Guid: " . $notebook->guid . ")</a><br />";
+        $content .= "<a href='?notebook=" . $notebook->guid . "'>" . $notebook->name . "</a><br />";
+        //. " (Guid: " . $notebook->guid . ")
     }
 }
 else {
@@ -56,8 +57,16 @@ else {
     $filter->notebookGuid = $_GET['notebook'];
     $notes = $noteStore->findNotes($token, $filter, 0, 100);
     
-    foreach ($notes->notes as $note) { 
-        $content .=  $note->title . "<br />"; 
+    $note_output = array();
+    foreach ($notes->notes as $note) {
+        $note = $client->getNote($note->guid);
+        
+        $theNoteArray = array(
+            "title" => $note->title,
+            "content" => $note->content->toEnml()
+        );
+        //htmlentities(str_replace('"', "\"", $note->content->toEnml()))
+        array_push($note_output, $theNoteArray);
     }
 }
 
